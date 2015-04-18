@@ -23,7 +23,7 @@
    - added support for Filter and Expression predicates
    - improved code testability and added unit-tests
  * Basic Datasource API integration and keyspace/cluster level settings (SPARKC-112, SPARKC-162)
-
+ * Add the abilty to use Custom Mappers with repartitionByCassandraReplica (SPARKC-104)
 ********************************************************************************
 
 1.2.3 (unreleased)
