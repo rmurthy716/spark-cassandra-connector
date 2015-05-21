@@ -4,6 +4,7 @@ import com.datastax.spark.connector
 import com.datastax.spark.connector.cql.ColumnDef
 import com.datastax.spark.connector.types.FieldDef
 import org.apache.spark.Logging
+import org.apache.spark.sql.cassandra.types.{UUIDType, InetAddressType}
 import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.{types => catalystTypes}
 
@@ -27,9 +28,9 @@ object DataTypeConverter extends Logging {
     connector.types.DecimalType    -> catalystTypes.DecimalType(),
 
     connector.types.TimestampType  -> catalystTypes.TimestampType,
-    connector.types.InetType       -> catalystTypes.StringType,
-    connector.types.UUIDType       -> catalystTypes.StringType,
-    connector.types.TimeUUIDType   -> catalystTypes.StringType,
+    connector.types.InetType       -> InetAddressType,
+    connector.types.UUIDType       -> UUIDType,
+    connector.types.TimeUUIDType   -> UUIDType,
     connector.types.BlobType       -> catalystTypes.BinaryType
   )
 
