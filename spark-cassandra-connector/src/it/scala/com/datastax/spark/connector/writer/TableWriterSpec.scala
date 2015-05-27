@@ -465,6 +465,15 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase {
     }
   }
 
+  it should "throw an exception when aliasing some tuple fields explicitly and others implicitly" in {
+    val col = Seq (("c","a"))
+    intercept[IllegalArgumentException] {
+      sc.parallelize(col).saveToCassandra(ks,
+        "map_tuple",
+        SomeColumns(("a" as "_2"),("b")))
+    }
+  }
+
   it should "write RDD of objects with inherited fields" in {
     val col = Seq(
       new SubKeyValue(1, "value1", 1L),
