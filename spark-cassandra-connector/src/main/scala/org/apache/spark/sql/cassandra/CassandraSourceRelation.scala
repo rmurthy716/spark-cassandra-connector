@@ -1,6 +1,6 @@
 package org.apache.spark.sql.cassandra
 
-import org.apache.spark.Logging
+import org.apache.spark.{SparkConf, Logging}
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.cassandra.CassandraSQLRow.CassandraSQLRowReader
@@ -40,7 +40,7 @@ private[cassandra] class CassandraSourceRelation(
     .keyspaceByName(tableRef.keyspace).tableByName(tableRef.table)
 
   override def schema: StructType = {
-    userSpecifiedSchema.getOrElse(StructType(tableDef.allColumns.map(toStructField)))
+    userSpecifiedSchema.getOrElse(StructType(tableDef.columns.map(toStructField)))
   }
 
   override def insert(data: DataFrame, overwrite: Boolean): Unit = {
@@ -92,7 +92,7 @@ private[cassandra] class CassandraSourceRelation(
   /** Transfer selection to limit to columns specified */
   private def maybeSelect(rdd: RDDType, requiredColumns: Array[String]) : RDDType = {
     if (requiredColumns.nonEmpty) {
-      rdd.select(requiredColumns.map(column => column: NamedColumnRef): _*)
+      rdd.select(requiredColumns.map(column => column: ColumnRef): _*)
     } else {
       rdd
     }
@@ -140,22 +140,28 @@ object CassandraSourceRelation {
     tableSizeInBytesProperty
   )
 
+  val defaultClusterName = "default"
+
   def apply(
-      tableRef: TableRef,
-      sqlContext: SQLContext,
-      options: CassandraSourceOptions = CassandraSourceOptions(),
-      schema : Option[StructType] = None) : CassandraSourceRelation = {
+    tableRef: TableRef,
+    sqlContext: SQLContext,
+    options: CassandraSourceOptions = CassandraSourceOptions(),
+    schema : Option[StructType] = None) : CassandraSourceRelation = {
 
-    val conf = sqlContext.sparkContext.getConf.clone()
-    for (prop <- DefaultSource.confProperties) {
-      val tableLevelValue = options.cassandraConfs.get(prop)
-      if (tableLevelValue.nonEmpty)
-        conf.set(prop, tableLevelValue.get)
-    }
-
+    val sparkConf = sqlContext.sparkContext.getConf
+    val sqlConf = sqlContext.getAllConfs
+    val conf =
+      consolidateConfs(sparkConf, sqlConf, tableRef, options.cassandraConfs)
     val tableSizeInBytesString = conf.getOption(tableSizeInBytesProperty)
-    val tableSizeInBytes = if (tableSizeInBytesString.nonEmpty) Option(tableSizeInBytesString.get.toLong) else None
-    val cassandraConnector = new CassandraConnector(CassandraConnectorConf(conf))
+    val tableSizeInBytes = {
+      if (tableSizeInBytesString.nonEmpty) {
+        Option(tableSizeInBytesString.get.toLong)
+      } else {
+        None
+      }
+    }
+    val cassandraConnector =
+      new CassandraConnector(CassandraConnectorConf(conf))
     val readConf = ReadConf.fromSparkConf(conf)
     val writeConf = WriteConf.fromSparkConf(conf)
 
@@ -168,5 +174,35 @@ object CassandraSourceRelation {
       readConf = readConf,
       writeConf = writeConf,
       sqlContext = sqlContext)
+  }
+
+  /**
+   * Consolidate Cassandra conf settings in the order of
+   * table level -> keyspace level -> cluster level ->
+   * default. Use the first available setting. Default
+   * settings are stored in SparkConf.
+   */
+  def consolidateConfs(
+    sparkConf: SparkConf,
+    sqlConf: Map[String, String],
+    tableRef: TableRef,
+    tableConf: Map[String, String]) : SparkConf = {
+    //Default settings
+    val conf = sparkConf.clone()
+    //Keyspace/Cluster level settings
+    for (prop <- DefaultSource.confProperties) {
+      val cluster = tableRef.cluster.getOrElse(defaultClusterName)
+      val clusterLevelValue = sqlConf.get(s"$cluster/$prop")
+      if (clusterLevelValue.nonEmpty)
+        conf.set(prop, clusterLevelValue.get)
+      val keyspaceLevelValue =
+        sqlConf.get(s"$cluster:${tableRef.keyspace}/$prop")
+      if (keyspaceLevelValue.nonEmpty)
+        conf.set(prop, keyspaceLevelValue.get)
+      val tableLevelValue = tableConf.get(prop)
+      if (tableLevelValue.nonEmpty)
+        conf.set(prop, tableLevelValue.get)
+    }
+    conf
   }
 }

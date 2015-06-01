@@ -17,7 +17,7 @@ private[cassandra] case class CassandraRelation
   val clusterColumns        = tableDef.clusteringColumns.map(columnToAttribute)
   val allColumns            = tableDef.regularColumns ++ tableDef.partitionKey ++ tableDef.clusteringColumns
   val columnNameByLowercase = allColumns.map(c => (c.columnName.toLowerCase, c.columnName)).toMap
-  var projectAttributes     = tableDef.allColumns.map(columnToAttribute)
+  var projectAttributes     = tableDef.columns.map(columnToAttribute)
 
   def columnToAttribute(column: ColumnDef): AttributeReference = {
     // Since data can be dumped in randomly with no validation, everything is nullable.
