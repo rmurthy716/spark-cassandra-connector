@@ -5,6 +5,8 @@
    - added support for Filter and Expression predicates
    - improved code testability and added unit-tests
  * Basical Datasource API integration and keyspace/cluster level settings (SPARKC-112, SPARKC-162)
+ * Add Custom UUIDType and InetAddressType to Spark Sql data type mapping (SPARKC-129)
+
 ********************************************************************************
 
 1.2.2 (unreleased)
