@@ -1,4 +1,4 @@
-1.3.x (unreleased)
+1.3.0 M1
  * Removed use of Thrift describe_ring and replaced it with native Java Driver
    support for fetching TokenRanges (SPARKC-93)
  * Support for converting Cassandra UDT column values to Scala case-class objects (SPARKC-4)
@@ -14,9 +14,9 @@
  * Basical Datasource API integration and keyspace/cluster level settings (SPARKC-112, SPARKC-162)
  * Add Custom UUIDType and InetAddressType to Spark Sql data type mapping (SPARKC-129)
 
-********************************************************************************
-
-1.2.2 (unreleased)
+1.2.2
+ * Updated Spark version to 1.2.2, Scala to 2.10.5 / 2.11.6
+ * Enabled Java API artifact generation for Scala 2.11.x (SPARKC-130)
  * Fixed a bug preventing a custom type converter from being used
    when saving data. RowWriter implementations must
    perform type conversions now. (SPARKC-157)
@@ -96,7 +96,8 @@
 
 ********************************************************************************
 
-1.1.x (unreleased)
+1.1.2
+ * Backport SPARKC-8, retrieval of TTL and write time
  * Upgraded to Spark 1.1.1
  * Synchronized ReflectionUtil findScalaObject and findSingletonClassInstance methods
    to avoid problems with Scala 2.10 lack thread safety in the reflection subsystem (SPARKC-107)
