@@ -36,8 +36,8 @@ class TupleColumnMapper[T : TypeTag] extends ColumnMapper[T] {
       selectedColumns.forall(colName => colName.selectedAs == colName.columnName) ||
         selectedColumns.forall(colName => colName.selectedAs != colName.columnName),
       """No mixing of implicit and explicit column mapping when writing tuples
-        |1. All columns are un-aliased or aliased to themselves
-        |2. Some columns are aliased to tuple names but no columns are implicitly mapped"""
+        |1. All columns must be un-aliased or aliased to themselves OR
+        |2. Some columns aliased to fields (_1,_2 ...) but no columns are implicitly mapped"""
         .stripMargin
     )
 
@@ -54,13 +54,13 @@ class TupleColumnMapper[T : TypeTag] extends ColumnMapper[T] {
     val aliasToRef = selectedColumns.map(colRef => colRef.selectedAs -> colRef).toMap
 
     //Implicit Mapping, Order of C* Columns == Tuple Field Order
-    val getters = if (selectedColumns.forall(colName => colName.columnName == colName.selectedAs)) {
-      for (methodName@GetterRegex(id) <- methodNames if id.toInt <= selectedColumns.length)
+    val getters = if (selectedColumns.forall(colRef => colRef.columnName == colRef.selectedAs)) {
+      for (methodName @ GetterRegex(id) <- methodNames if id.toInt <= selectedColumns.length)
         yield (methodName, selectedColumns(id.toInt - 1))
     }.toMap
     else {
       //Explicit Mapping, Tuple field aliases used
-      for (methodName@GetterRegex(id) <- methodNames if aliasToRef.contains(methodName))
+      for (methodName @ GetterRegex(id) <- methodNames if aliasToRef.contains(methodName))
         yield (methodName, aliasToRef(methodName))
     }.toMap
 
